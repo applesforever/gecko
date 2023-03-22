@@ -28,6 +28,26 @@ if(NOT CMAKE_BUILD_TYPE)
     )
 endif()
 
+# Check git submodules
+find_package(Git QUIET)
+if(GIT_FOUND AND EXISTS "${CMAKE_SOURCE_DIR}/.git/")
+    option(GECKO_GIT_CHECKOUT "Checkout git submodules" ON)
+    if(GECKO_GIT_CHECKOUT)
+        execute_process(
+            COMMAND ${GIT_EXECUTABLE} submodule update --init --remote --recursive
+            WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+            RESULT_VARIABLE GIT_CHECKOUT_STATUS
+        )
+        if(NOT GIT_CHECKOUT_STATUS EQUAL 0)
+            message(FATAL_ERROR "Failed to update submodules.")
+        endif()
+    endif()
+endif()
+
+if(NOT EXISTS "${CMAKE_SOURCE_DIR}/third_party/spdlog/CMakeLists.txt")
+    message(FATAL_ERROR "The submodules aren't downloaded.")
+endif()
+
 # Options
 option(GECKO_SHARED "Build shared libraries" OFF)
 
@@ -58,5 +78,13 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELWITHDEBINFO "${CMAKE_BINARY_DIR}/bin/")
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY_MINSIZEREL "${CMAKE_BINARY_DIR}/lib/")
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY_MINSIZEREL "${CMAKE_BINARY_DIR}/lib/")
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_MINSIZEREL "${CMAKE_BINARY_DIR}/bin/")
+
+set(spdlog_FOUND ON)
+set(spdlog_LIBRARY "spdlog::spdlog")
+set(spdlog_LIBRARIES ${spdlog_LIBRARY})
+set(spdlog_INCLUDE_DIR "${CMAKE_SOURCE_DIR}/third_party/spdlog/include/")
+set(spdlog_INCLUDE_DIRS ${spdlog_INCLUDE_DIR})
+
+add_subdirectory(third_party)
 
 add_subdirectory(src)
